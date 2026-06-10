@@ -1,0 +1,44 @@
+name: actualizar-predicciones
+on:
+  schedule:
+    - cron: "0 */6 * * *"   # cada 6 horas durante el torneo
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  predecir:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Descargar resultados reales y simular
+        run: python model/predict.py --fetch --sims 10000
+      - name: Publicar predicciones
+        run: |
+          git config user.name "upocuantitativo"
+          git config user.email "manolochaves@gmail.com"
+          git add predictions.json data/results.json || true
+          git diff --cached --quiet || git commit -m "Actualizar predicciones ($(date -u +%F))"
+          git push
+
+  imagenes:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Buscar imagenes libres en Wikidata/Commons
+        run: python images/fetch_images.py
+      - name: Publicar images.json
+        run: |
+          git config user.name "upocuantitativo"
+          git config user.email "manolochaves@gmail.com"
+          git add images.json || true
+          git diff --cached --quiet || git commit -m "Actualizar imagenes de jugadores"
+          git push
