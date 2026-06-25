@@ -23,7 +23,8 @@ jobs:
         run: |
           git config user.name "upocuantitativo"
           git config user.email "manolochaves@gmail.com"
-          git add predictions.json data/results.json || true
+          git add predictions.json
+          git add data/results.json || true
           git diff --cached --quiet || git commit -m "Actualizar predicciones ($(date -u +%F))"
           git push
 
