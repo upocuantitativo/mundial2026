@@ -25,8 +25,15 @@ jobs:
           git config user.email "manolochaves@gmail.com"
           git add predictions.json
           git add data/results.json || true
-          git diff --cached --quiet || git commit -m "Actualizar predicciones ($(date -u +%F))"
-          git push
+          git diff --cached --quiet && echo "Sin cambios, nada que publicar" && exit 0
+          git commit -m "Actualizar predicciones ($(date -u +%F))"
+          # predecir e imagenes pueden empujar a main a la vez (workflow_dispatch);
+          # rebase + reintento evita el rechazo non-fast-forward.
+          for i in 1 2 3 4 5; do
+            git pull --rebase --autostash origin main && git push && exit 0
+            echo "push rechazado, reintento $i tras rebase..."; sleep 3
+          done
+          echo "No se pudo publicar predicciones tras varios intentos"; exit 1
 
   imagenes:
     runs-on: ubuntu-latest
@@ -43,5 +50,12 @@ jobs:
           git config user.name "upocuantitativo"
           git config user.email "manolochaves@gmail.com"
           git add images.json || true
-          git diff --cached --quiet || git commit -m "Actualizar imagenes de jugadores"
-          git push
+          git diff --cached --quiet && echo "Sin cambios, nada que publicar" && exit 0
+          git commit -m "Actualizar imagenes de jugadores"
+          # predecir e imagenes pueden empujar a main a la vez (workflow_dispatch);
+          # rebase + reintento evita el rechazo non-fast-forward.
+          for i in 1 2 3 4 5; do
+            git pull --rebase --autostash origin main && git push && exit 0
+            echo "push rechazado, reintento $i tras rebase..."; sleep 3
+          done
+          echo "No se pudo publicar images.json tras varios intentos"; exit 1
