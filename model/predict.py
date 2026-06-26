@@ -109,11 +109,21 @@ def build_r32(first, second, T):
     ]
 
 
+def _asdict(v):
+    # PHP/JSON serializa un array asociativo vacio como [] (lista), no {} (objeto).
+    # El API devuelve "ko": [] mientras no hay eliminatorias jugadas; normalizamos
+    # a dict para poder indexar con .get() sin romper.
+    return v if isinstance(v, dict) else {}
+
+
 def sim_world_cup(real):
+    real = real if isinstance(real, dict) else {}
+    real_groups = _asdict(real.get("groups"))
+    real_ko = _asdict(real.get("ko"))
     groups = {g: [t for t in TEAMS if TEAMS[t]["g"] == g] for g in GROUPS}
     first, second, thirds = {}, {}, []
     for g in GROUPS:
-        tb = sim_group(groups[g], (real or {}).get("groups", {}).get(g))
+        tb = sim_group(groups[g], real_groups.get(g))
         first[g], second[g] = tb[0]["t"], tb[1]["t"]
         thirds.append((tb[2]["pts"], tb[2]["gf"] - tb[2]["gc"], random.random(), tb[2]["t"]))
     thirds.sort(reverse=True)
@@ -123,7 +133,7 @@ def sim_world_cup(real):
     for ri, rid in enumerate(KO):
         res, winners = [], []
         for idx, (a, b) in enumerate(cur):
-            fx = (real or {}).get("ko", {}).get(f"{rid}-{idx}")
+            fx = real_ko.get(f"{rid}-{idx}")
             if fx and fx.get("a") and fx.get("ga") not in ("", None):
                 a, b = fx["a"], fx["b"]
                 ga, gb = int(fx["ga"]), int(fx["gb"])
